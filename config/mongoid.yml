@@ -1,6 +1,6 @@
 production:
   # Configure available database clients. (required)
-  sessions:
+  clients:
     # Defines the default client. (required)
     default:
       # Mongoid can connect to a URI accepted by the driver:
