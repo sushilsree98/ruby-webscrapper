@@ -15,7 +15,6 @@ require "action_cable/engine"
 require "rails/test_unit/railtie"
 require 'rails/mongoid'
 
-Mongoid.load!(File.expand_path('mongoid.yml', './config'))
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -25,6 +24,8 @@ module WebScrapper
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.0
+    Mongoid.load!(File.expand_path('mongoid.yml', './config'))
+
 
     # Configuration for the application, engines, and railties goes here.
     #
