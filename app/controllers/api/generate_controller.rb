@@ -1,5 +1,6 @@
+require "date"
 class Api::GenerateController < ApplicationController
-    before_action :getScrap, only: [:updateScrap, :deleteScrap, :showScrap]
+    before_action :getScrap, only: [:updateScrap, :deleteScrap, :showScrap, :addData]
 
     # GET
     def getData
@@ -13,11 +14,38 @@ class Api::GenerateController < ApplicationController
 
     # POST
     def addData
-        data = Scrap.new(scrapParams)
-        if data.save()
-            render json: data, status: :ok
+        if @scrap.length > 0
+            data = @scrap
+            t1 = Date.parse(data[0][:created_at].to_s)
+            t2 = Date.today()
+            if t1 < t2-7
+                puts true
+                unparsed_page = HTTParty.get(params[:url])
+                parsed_page = Nokogiri::HTML(unparsed_page)
+                title = parsed_page.css('span.B_NuCI').text
+                price = parsed_page.css('div._16Jk6d').text
+                description = parsed_page.css('div._1AN87F').text
+                updated_data = @scrap.update(url: params[:url], title: title, price: price, description: description)
+                if updated_data
+                    puts "successfully updated"
+                else
+                    puts "Update failed!"
+                end
+            end
+            render json: {message:"Already present", data: @scrap}, status: :ok
         else
-            render json: {message:"Unable to fetch data"}, status: :unprocessable_entity
+            url = params[:url]
+            unparsed_page = HTTParty.get(url)
+            parsed_page = Nokogiri::HTML(unparsed_page)
+            title = parsed_page.css('span.B_NuCI').text
+            price = parsed_page.css('div._16Jk6d').text
+            description = parsed_page.css('div._1AN87F').text
+            data = Scrap.new(url:url, title: title, price: price, description: description)
+            if data.save()
+                render json: [data], status: :ok
+            else
+                render json: {message:"Unable to fetch data"}, status: :unprocessable_entity
+            end
         end
     end
 
@@ -58,7 +86,7 @@ class Api::GenerateController < ApplicationController
 
     private
         def scrapParams
-            params.permit(:url, :title, :description, :price);
+            params.permit(:url);
         end
 
         def getScrap
