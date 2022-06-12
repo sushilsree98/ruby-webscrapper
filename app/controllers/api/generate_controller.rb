@@ -14,9 +14,6 @@ class Api::GenerateController < ApplicationController
 
     # POST
     def addData
-        if !params[:url].start_with?('https://www.flipkart.com')
-            render json: {message:"invalid URL"}, status: :ok
-        end
         if @scrap.length > 0
             data = @scrap
             # To Check if created date is before expiry date and update the changes
@@ -103,9 +100,6 @@ class Api::GenerateController < ApplicationController
         end
 
         def getScrap
-            if !params[:url].start_with?('https://www.flipkart.com')
-                render json: {message:"invalid URL"}, status: :ok
-            end
             @scrap = Scrap.where(url: params[:url])
         end
 end
