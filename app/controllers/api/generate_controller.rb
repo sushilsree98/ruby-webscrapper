@@ -14,23 +14,31 @@ class Api::GenerateController < ApplicationController
 
     # POST
     def addData
+        if !params[:url].start_with?('https://www.flipkart.com')
+            render json: {message:"invalid URL"}, status: :ok
+        end
         if @scrap.length > 0
             data = @scrap
+            # To Check if created date is before expiry date and update the changes
             t1 = Date.parse(data[0][:created_at].to_s)
             t2 = Date.today()
             if t1 < t2-7
-                puts true
                 unparsed_page = HTTParty.get(params[:url])
                 parsed_page = Nokogiri::HTML(unparsed_page)
                 title = parsed_page.css('span.B_NuCI').text
                 price = parsed_page.css('div._16Jk6d').text
                 description = parsed_page.css('div._1AN87F').text
-                updated_data = @scrap.update(url: params[:url], title: title, price: price, description: description)
-                if updated_data
-                    puts "successfully updated"
+                if title == ""  
+                    render json: {message:"invalid URL"}, status: :ok
                 else
-                    puts "Update failed!"
+                    updated_data = @scrap.update(url: params[:url], title: title, price: price, description: description)
+                    if updated_data
+                        puts "successfully updated"
+                    else
+                        puts "Update failed!"
+                    end
                 end
+                
             end
             render json: {message:"Already present", data: @scrap}, status: :ok
         else
@@ -40,12 +48,17 @@ class Api::GenerateController < ApplicationController
             title = parsed_page.css('span.B_NuCI').text
             price = parsed_page.css('div._16Jk6d').text
             description = parsed_page.css('div._1AN87F').text
-            data = Scrap.new(url:url, title: title, price: price, description: description)
-            if data.save()
-                render json: [data], status: :ok
+            if title == ""  
+                render json: {message:"invalid URL"}, status: :ok
             else
-                render json: {message:"Unable to fetch data"}, status: :unprocessable_entity
+                data = Scrap.new(url:url, title: title, price: price, description: description)
+                if data.save()
+                    render json: {message:"Created Successfully!", data: [data]}, status: :ok
+                else
+                    render json: {message:"Unable to fetch data"}, status: :unprocessable_entity
+                end
             end
+            
         end
     end
 
@@ -90,6 +103,9 @@ class Api::GenerateController < ApplicationController
         end
 
         def getScrap
+            if !params[:url].start_with?('https://www.flipkart.com')
+                render json: {message:"invalid URL"}, status: :ok
+            end
             @scrap = Scrap.where(url: params[:url])
         end
 end
