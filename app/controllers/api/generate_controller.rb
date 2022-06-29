@@ -1,4 +1,4 @@
-require "date"
+require_relative "logic"
 class Api::GenerateController < ApplicationController
     before_action :getScrap, only: [:updateScrap, :deleteScrap, :showScrap, :addData]
 
@@ -16,15 +16,11 @@ class Api::GenerateController < ApplicationController
     def addData
         if @scrap.length > 0
             data = @scrap
-            # To Check if created date is before expiry date and update the changes
-            t1 = Date.parse(data[0][:created_at].to_s)
-            t2 = Date.today()
-            if t1 < t2-7
-                unparsed_page = HTTParty.get(params[:url])
-                parsed_page = Nokogiri::HTML(unparsed_page)
-                title = parsed_page.css('span.B_NuCI').text
-                price = parsed_page.css('div._16Jk6d').text
-                description = parsed_page.css('div._1AN87F').text
+            logic = Scrapper.new(params[:url], data[0])
+            if logic.get_date
+                title = logic.title
+                price = logic.price
+                description = logic.description
                 if title == ""  
                     render json: {message:"invalid URL"}, status: :ok
                 else
@@ -39,12 +35,10 @@ class Api::GenerateController < ApplicationController
             end
             render json: {message:"Already present", data: @scrap}, status: :ok
         else
-            url = params[:url]
-            unparsed_page = HTTParty.get(url)
-            parsed_page = Nokogiri::HTML(unparsed_page)
-            title = parsed_page.css('span.B_NuCI').text
-            price = parsed_page.css('div._16Jk6d').text
-            description = parsed_page.css('div._1AN87F').text
+            logic = Scrapper.new(params[:url])
+            title = logic.title
+            price = logic.price
+            description = logic.description
             if title == ""  
                 render json: {message:"invalid URL"}, status: :ok
             else
